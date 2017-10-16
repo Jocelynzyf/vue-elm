@@ -57,7 +57,7 @@
           this.$nextTick(() => {
             this._initScroll()
           })
-          console.log(data)
+          // console.log(data)
         }, function (response) {
         })
       },
