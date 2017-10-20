@@ -8,8 +8,8 @@
       </ul>
     </div>
     <div class="foodsWrapper" ref="foodsWrapper">
-      <ul>
-        <li class="food-list" v-for="item in goods">
+      <ul id="foodTest">
+        <li class="food-list foodListHook" v-for="item in goods">
           <h1 class="title">{{item.name}}</h1>
           <ul class="test">
             <li class="food-item border-bottom-1px" v-for="food in item.foods">
@@ -20,19 +20,16 @@
                 <h2 class="name">{{food.name}}</h2>
                 <p class="desc">{{food.description}}</p>
                 <div class="extra">
-                  <span class="count">月售{{food.sellCount}}份</span>
-                  <span class="rate">好评{{food.rating}}%</span>
+                  <span class="count">月售{{food.sellCount}}份</span><span class="rate">好评{{food.rating}}%</span>
                 </div>
                 <div class="price">
-                  <span class="now">￥{{food.price}}</span>
-                  <span class="old" v-if="food.oldPrice">￥{{food.oldPrice}}</span>
+                  <span class="now">￥{{food.price}}</span><span class="old" v-if="food.oldPrice">￥{{food.oldPrice}}</span>
                 </div>
               </div>
             </li>
           </ul>
         </li>
       </ul>
-
     </div>
   </div>
 </template>
@@ -44,11 +41,26 @@
     data () {
       return {
         goods: {},
-        url: 'http://127.0.0.1:8888/goods.php?callback=getdata'
+        url: 'http://127.0.0.1:8888/goods.php?callback=getdata',
+        listHeight: [],
+        scrollY: 0
+      }
+    },
+    computed: {
+      currentIndex () {
+        for (let i = 0; i < this.listHeight.length; i++) {
+          let height1 = this.listHeight[i]
+          let height2 = this.listHeight[i + 1]
+          if (!height2 || (this.scrollY >= height1 && this.scrollY < height2)) {
+            return i
+          }
+        }
+        return 0
       }
     },
     created () {
       this.fetchData()
+      this._caculateHeight()
     },
     methods: {
       fetchData () {
@@ -56,6 +68,7 @@
           this.goods = data.body
           this.$nextTick(() => {
             this._initScroll()
+            this._caculateHeight()
           })
           // console.log(data)
         }, function (response) {
@@ -63,7 +76,25 @@
       },
       _initScroll () {
         this.menuScroll = new BScroll(this.$refs.menuWrapper, {})
-        this.foodsScroll = new BScroll(this.$refs.foodsWrapper, {})
+        this.foodsScroll = new BScroll(this.$refs.foodsWrapper, {
+          probeType: 3
+        })
+        // console.log(this.$refs.foodsWrapper.innerHTML)
+        this.foodsScroll.on('scroll', (pos) => {
+          this.scrollY = Math.abs(Math.round(pos.y))
+        })
+      },
+      _caculateHeight () {
+        // undefined
+        console.log(this.$refs.foodsWrapper.innerHTML)
+        let foodList = this.$refs.foodsWrapper.getElemmentsByClassName('foodListHook')
+        let height = 0
+        this.listHeight.push(height)
+        for (let i = 0; i < foodList.length; i++) {
+          let item = foodList[i]
+          height = item.clientHeight
+          this.listHeight.push(height)
+        }
       }
     }
   }
@@ -99,6 +130,13 @@
   line-height: 14px;
   font-size: 12px;
   padding: 0 12px;
+}
+.current{
+  position: relative;
+  z-index: 10;
+  margin-top: -1px;
+  background: #fff;
+  font-weight: 700;
 }
 
 .menuWrapper .icon{
@@ -139,10 +177,8 @@
   margin: 18px;
   padding-bottom: 18px;
 }
-/*如何去掉border问题：无法选取到last-child实验first-child可用*/
-/*.border-bottom-1px:first-child::after{
-  display: none;
-}*/
+
+
 .test .border-bottom-1px:last-child::after{
   display: none;
   margin-bottom: 0;
@@ -173,6 +209,7 @@
 }
 .food-content .desc{
   margin-bottom: 8px;
+  line-height: 12px;
 }
 .extra .count{
   margin-right: 12px;
